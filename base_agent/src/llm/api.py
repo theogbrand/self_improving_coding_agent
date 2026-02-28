@@ -145,6 +145,14 @@ class ModelProvider:
         return cls._clients[Provider.VERTEX]
 
     @classmethod
+    def _get_ollama_client(cls):
+        """Get or create an Ollama client (OpenAI-compatible)."""
+        if Provider.OLLAMA not in cls._clients:
+            ollama_url = os.environ.get("OLLAMA_API_URL", "http://localhost:11434/v1")
+            cls._clients[Provider.OLLAMA] = AsyncOpenAI(base_url=ollama_url, api_key="ollama")
+        return cls._clients[Provider.OLLAMA]
+
+    @classmethod
     def get_provider(cls, provider: Provider):
         """Get the appropriate provider implementation."""
         if provider not in cls._providers:
@@ -173,6 +181,9 @@ class ModelProvider:
                 case Provider.VERTEX:
                     client = cls._get_vertex_client()
                     cls._providers[provider] = VertexProvider(client)
+                case Provider.OLLAMA:
+                    client = cls._get_ollama_client()
+                    cls._providers[provider] = OpenAIProvider(client)
                 case _:
                     raise ValueError(f"Unexpected provider: {provider}")
         return cls._providers[provider]

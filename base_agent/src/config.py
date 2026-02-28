@@ -14,9 +14,9 @@ class Settings(BaseSettings):
     NAME: str = "self_referential_agent"
     LOG_LEVEL: str = "INFO"
 
-    MODEL: Model = Model.SONNET_37
-    REASONING_MODEL: Model = Model.O3_MINI
-    OVERSIGHT_MODEL: Model = Model.SONNET_37
+    MODEL: Model = Model.OLLAMA_QWEN3_CODER
+    REASONING_MODEL: Model = Model.OLLAMA_QWEN3_CODER
+    OVERSIGHT_MODEL: Model = Model.OLLAMA_QWEN3_CODER
 
     @field_validator("MODEL", "REASONING_MODEL", "OVERSIGHT_MODEL", mode="before")
     def parse_model(cls, value):
