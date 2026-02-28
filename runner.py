@@ -478,10 +478,12 @@ async def process_job(
                 # An additional safety feature; if timeout cancellation
                 # doesn't happen at the application layer, we cancel
                 # the docker container
-                async with asyncio.timeout(TIMEOUT_SECONDS + 10):
-                    success, stdout, stderr = await run_docker_command(
+                success, stdout, stderr = await asyncio.wait_for(
+                    run_docker_command(
                         "docker", "exec", container_name, *agent_cmd
-                    )
+                    ),
+                    timeout=TIMEOUT_SECONDS + 10,
+                )
             except asyncio.TimeoutError:
                 # Timeout exceeded the grace period
                 logger.warning(
@@ -1033,7 +1035,7 @@ async def main():
 
         # Improvement task
         logger.info(f"Starting agent improvement for iteration {i}")
-        next_agent_dir.mkdir(exist_ok=False, parents=True)
+        next_agent_dir.mkdir(exist_ok=True, parents=True)
         await run_meta_agent_benchmark(
             exp_id, i, exp_dir, current_agent_dir, next_agent_dir
         )
