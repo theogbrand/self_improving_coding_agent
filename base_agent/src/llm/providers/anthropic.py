@@ -369,12 +369,13 @@ class AnthropicProvider(BaseProvider):
             elif hasattr(anthropic_messages[i]["content"][-1], "text") and anthropic_messages[i]["content"][-1]["text"] != "":
                 break
 
-        # Newer Claude models (e.g. claude-sonnet-4-6) don't support
-        # assistant prefill; ensure conversation ends with a user message.
+        # Claude Sonnet 4.6+ does not support assistant message prefill.
+        # If the conversation ends with an assistant message, append a user
+        # message so the model can continue from its prior work.
         if anthropic_messages[-1]["role"] == "assistant":
             anthropic_messages.append({
                 "role": "user",
-                "content": [{"type": "text", "text": "Continue."}],
+                "content": [{"type": "text", "text": "Continue from where you left off. Do not repeat any prior work."}],
             })
 
         # Default to setting a cache break point at the last message
@@ -581,7 +582,7 @@ class AnthropicProvider(BaseProvider):
                     "max_tokens": max_tokens or model.max_output_tokens,
                 }
 
-                # Newer Claude models don't allow both temperature and top_p
+                # Claude Sonnet 4.6+ rejects requests with both temperature and top_p
                 if not model.is_reasoner:
                     args["top_p"] = top_p
 
@@ -594,17 +595,21 @@ class AnthropicProvider(BaseProvider):
 
                 if available_tools and model.fci == FCI.CONSTRAINED:
                     args["tools"] = [self.pydantic_to_native_tool(t) for t in available_tools]
+                    # Enable interleaved thinking with tools via beta header
+                    if model.is_reasoner:
+                        args["extra_headers"] = {
+                            "anthropic-beta": "interleaved-thinking-2025-05-14"
+                        }
 
+                # Extended thinking: direct SDK parameter (not extra_body)
                 if model.is_reasoner and reasoning_effort is not None:
                     args["temperature"] = 1.0
-                    args["extra_body"] = {
-                        "thinking": {
-                            "type": "enabled",
-                            "budget_tokens": self._reasoning_budgets_to_tokens(reasoning_effort),
-                        }
+                    args["thinking"] = {
+                        "type": "enabled",
+                        "budget_tokens": self._reasoning_budgets_to_tokens(reasoning_effort),
                     }
 
-                # Stream internally to avoid SDK timeout on long requests,
+                # Stream internally to avoid SDK timeout on large max_tokens,
                 # then collect into a final Message for the continuation logic.
                 async with self.client.messages.stream(**args) as stream:
                     response = await stream.get_final_message()
