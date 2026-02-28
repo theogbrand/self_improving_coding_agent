@@ -58,12 +58,16 @@ class ModelProvider:
     def _get_anthropic_client(cls):
         """Get or create an Anthropic client with API key from env var."""
         if Provider.ANTHROPIC not in cls._clients:
+            import httpx
             from anthropic import AsyncAnthropic
 
             api_key = os.environ.get("ANTHROPIC_API_KEY")
             if not api_key:
                 raise ValueError("Anthropic API key not found in settings")
-            cls._clients[Provider.ANTHROPIC] = AsyncAnthropic(api_key=api_key)
+            cls._clients[Provider.ANTHROPIC] = AsyncAnthropic(
+                api_key=api_key,
+                timeout=httpx.Timeout(600.0, connect=5.0),
+            )
         return cls._clients[Provider.ANTHROPIC]
 
     @classmethod

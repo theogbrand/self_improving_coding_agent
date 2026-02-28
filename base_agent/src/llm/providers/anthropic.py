@@ -369,12 +369,13 @@ class AnthropicProvider(BaseProvider):
             elif hasattr(anthropic_messages[i]["content"][-1], "text") and anthropic_messages[i]["content"][-1]["text"] != "":
                 break
 
-        # Ensure the last assistant message in the prefill doesn't have
-        # trailing whitespace
+        # Newer Claude models (e.g. claude-sonnet-4-6) don't support
+        # assistant prefill; ensure conversation ends with a user message.
         if anthropic_messages[-1]["role"] == "assistant":
-            for block in reversed(anthropic_messages[-1]["content"]):
-                if block["type"] == "text":
-                    block["text"] = block["text"].rstrip()
+            anthropic_messages.append({
+                "role": "user",
+                "content": [{"type": "text", "text": "Continue."}],
+            })
 
         # Default to setting a cache break point at the last message
         anthropic_messages[-1]["content"][-1]["cache_control"] = {"type": "ephemeral"}
@@ -577,9 +578,12 @@ class AnthropicProvider(BaseProvider):
                     "messages": anthropic_messages,
                     "model": model.id,
                     "temperature": temperature,
-                    "top_p": top_p,
                     "max_tokens": max_tokens or model.max_output_tokens,
                 }
+
+                # Newer Claude models don't allow both temperature and top_p
+                if not model.is_reasoner:
+                    args["top_p"] = top_p
 
                 if system_content:
                     args["system"] = system_content
@@ -593,7 +597,6 @@ class AnthropicProvider(BaseProvider):
 
                 if model.is_reasoner and reasoning_effort is not None:
                     args["temperature"] = 1.0
-                    del args["top_p"]
                     args["extra_body"] = {
                         "thinking": {
                             "type": "enabled",
@@ -601,19 +604,10 @@ class AnthropicProvider(BaseProvider):
                         }
                     }
 
-                # Execute the request with raw response to get headers
-                try:
-                    # For newer versions of the Anthropic SDK (0.17.0+)
-                    raw_response = await self.client.messages.with_raw_response.create(**args)
-                    response = raw_response.parsed
-                    headers = raw_response.headers
-
-                    # Update rate limiter with the headers
-                    anthropic_rate_limiter.update_from_headers(headers)
-                except (AttributeError, TypeError):
-                    # Fallback for older SDK versions
-                    response = await self.client.messages.create(**args)
-                    # No headers available in older SDKs, but we can use the usage data
+                # Stream internally to avoid SDK timeout on long requests,
+                # then collect into a final Message for the continuation logic.
+                async with self.client.messages.stream(**args) as stream:
+                    response = await stream.get_final_message()
 
                 end_time = datetime.now()
 

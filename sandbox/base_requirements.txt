@@ -2,3 +2,6 @@
 # Intentionally _not_ pinning versions so we get recent versions on every build
 black
 flake8
+requests
+urllib3
+charset-normalizer

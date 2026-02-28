@@ -240,7 +240,7 @@ class Model(Enum):
     )
 
     SONNET_37 = ModelInfo(
-        api_name="claude-3-7-sonnet-20250219",
+        api_name="claude-sonnet-4-6",
         provider=Provider.ANTHROPIC,
         costs=TokenCost(
             input_uncached=3.00,  # Base input cost

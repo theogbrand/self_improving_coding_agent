@@ -8,6 +8,7 @@ int:  ## Interactive run; uses default shell entrypoint
 	@echo 'Watch the agent work on localhost:8080'
 	docker run --rm -ti \
 		-p 8080:8080 \
+		--env-file .env \
 		-v ${PWD}/base_agent:/home/agent/agent_code:ro \
 		-v ${PWD}/results/interactive_output:/home/agent/workdir:rw \
 		sica_sandbox

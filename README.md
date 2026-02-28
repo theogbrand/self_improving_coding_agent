@@ -68,7 +68,7 @@ make int
 ```
 This will start the docker container and attach your shell to it. You can then run
 ```bash
-python -m agent_code.agent --server true -p "<some initial request here>"
+python -m agent_code.agent --server -p "save a fun fact about Singapore in a file called fun_fact.md"
 ```
 Then open your browser on http://localhost:8080 to follow the agent execution. This will show you an interactive webpage which visualises the events in the event bus / the agent callgraph, allowing you to click on individual events to see them in more detail, read overseer messages, and collapse sub-agent traces.
 
