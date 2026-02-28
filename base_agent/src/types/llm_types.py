@@ -208,7 +208,7 @@ class Model(Enum):
     """
 
     HAIKU_35 = ModelInfo(
-        api_name="claude-3-5-haiku-20241022",
+        api_name="claude-haiku-4-5",
         provider=Provider.ANTHROPIC,
         costs=TokenCost(
             input_uncached=0.80,  # Base input cost
@@ -216,7 +216,7 @@ class Model(Enum):
             cache_write=1.00,  # Cache write cost
             output=4.00,  # Output cost
         ),
-        max_tokens=8192,  # Maximum output tokens for 3.5 Haiku
+        max_tokens=64000,  # Maximum output tokens for 3.5 Haiku
         supports_caching=True,
         context_window=200000,
         function_calling_interface=FCI.CONSTRAINED,
