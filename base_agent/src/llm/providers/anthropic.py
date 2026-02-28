@@ -582,9 +582,7 @@ class AnthropicProvider(BaseProvider):
                     "max_tokens": max_tokens or model.max_output_tokens,
                 }
 
-                # Claude Sonnet 4.6+ rejects requests with both temperature and top_p
-                if not model.is_reasoner:
-                    args["top_p"] = top_p
+                # Claude API rejects requests with both temperature and top_p
 
                 if system_content:
                     args["system"] = system_content
@@ -764,10 +762,10 @@ class AnthropicProvider(BaseProvider):
             "messages": anthropic_messages,
             "model": model.id,
             "temperature": temperature,
-            "top_p": top_p,
             "max_tokens": max_tokens or model.max_output_tokens,
             "stream": True,
         }
+        # Claude API rejects requests with both temperature and top_p
 
         if system_content:
             args["system"] = system_content

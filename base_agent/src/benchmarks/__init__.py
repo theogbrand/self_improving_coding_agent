@@ -31,13 +31,13 @@ from .aiq_project_benchmarks import (
 # Important, append new benchmarks to the end of this
 benchmark_registry: OrderedDict[str, Type[BaseBenchmark]] = OrderedDict(
     [
-        (GSM8KBenchmark.name, GSM8KBenchmark),
+        # (GSM8KBenchmark.name, GSM8KBenchmark),
         # (DROPBenchmark.name, DROPBenchmark),
         # (ARCAGIBenchmark.name, ARCAGIBenchmark),
         # (MATHBenchmark.name, MATHBenchmark),
         # (GSMICBenchmark.name, GSMICBenchmark),
         # (FileEditingBenchmark.name, FileEditingBenchmark),
-        # (SWEBenchBenchmark.name, SWEBenchBenchmark),
+        (SWEBenchBenchmark.name, SWEBenchBenchmark),
         # (HumanEvalBenchmark.name, HumanEvalBenchmark),
         # (AIMEBenchmark.name, AIMEBenchmark),
         # (GPQABenchmark.name, GPQABenchmark),
