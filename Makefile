@@ -1,4 +1,4 @@
-.PHONY: test
+.PHONY: test image image-spark image-mac
 
 PWD := $(shell pwd)
 
@@ -7,7 +7,7 @@ int:  ## Interactive run; uses default shell entrypoint
 	@echo 'python -m agent_code.agent -s -p "<your prompt here>"'
 	@echo 'Watch the agent work on localhost:8080'
 	docker run --rm -ti \
-		-p 8080:8080 \
+		--network host \
 		--env-file .env \
 		-v ${PWD}/base_agent:/home/agent/agent_code:ro \
 		-v ${PWD}/results/interactive_output:/home/agent/workdir:rw \
@@ -35,7 +35,7 @@ image:  ## Docker image for x86_64
 		--build-arg VERTEX_PROJECT_ID=$${VERTEX_PROJECT_ID:-placeholder_vertex_project_id} \
 		--load sandbox
 
-image-mac:  ## Docker image for apple silicon
+image-spark:  ## Docker image for DGX Spark Linux ARM64
 	@ANTHROPIC_API_KEY=$${ANTHROPIC_API_KEY:-placeholder_anthropic_api_key} \
 	OPENAI_API_KEY=$${OPENAI_API_KEY:-placeholder_openai_api_key} \
 	FIREWORKS_AI_API_KEY=$${FIREWORKS_AI_API_KEY:-placeholder_fireworks_api_key} \
@@ -45,6 +45,7 @@ image-mac:  ## Docker image for apple silicon
 	docker buildx build --build-context base_agent=./base_agent \
 		-f sandbox/Dockerfile \
 		-t sica_sandbox \
+		--platform linux/arm64 \
 		--build-arg TARGET_ARCH=aarch64 \
 		--build-arg ANTHROPIC_API_KEY=$${ANTHROPIC_API_KEY:-placeholder_anthropic_api_key} \
 		--build-arg OPENAI_API_KEY=$${OPENAI_API_KEY:-placeholder_openai_api_key} \
@@ -53,6 +54,9 @@ image-mac:  ## Docker image for apple silicon
 		--build-arg DEEPSEEK_API_KEY=$${DEEPSEEK_API_KEY:-placeholder_deepseek_api_key} \
 		--build-arg VERTEX_PROJECT_ID=$${VERTEX_PROJECT_ID:-placeholder_vertex_project_id} \
 		--load sandbox
+
+image-linux-arm64: image-spark  ## Alias for Linux ARM64
+image-mac: image-spark  ## Alias for Apple silicon (arm64)
 
 docs:  ## Compile documentation
 	python base_agent/utils/documentation.py base_agent > base_agent/DOCUMENTATION.md
