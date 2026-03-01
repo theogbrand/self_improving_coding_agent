@@ -48,10 +48,12 @@ Once you have at least one LLM provider's API key exported, you can build the do
 make image
 ```
 
-If you are using an apple silicon machine, use this target instead:
-```
+If you are using an ARM64 machine (Apple silicon or Linux ARM64), use either:
+```bash
+make image-spark
 make image-mac
 ```
+`make image-spark` is the preferred target for DGX Spark Linux ARM64.
 
 Finally, install the requirements in your local python environment:
 ```bash
@@ -99,6 +101,7 @@ python runner.py --help
 ```
 Common options might be
 ```bash
+python runner.py --experiment-id 2 --iterations 2 --workers 1
 python runner.py --id 1 --workers 6
 ```
 
