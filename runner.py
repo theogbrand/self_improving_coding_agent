@@ -418,6 +418,8 @@ async def process_job(
             "-d",
             "--name",
             container_name,
+            "--env-file",
+            ".env",
         ]
         container_cmd += ["-p", f"808{worker_id}:8080"]
         # Mount the experiment directory (results/run_{i})
@@ -827,7 +829,7 @@ async def run_meta_agent_benchmark(
 
     try:
         # Start the container
-        container_cmd = ["docker", "run", "--rm", "-d", "--name", container_name]
+        container_cmd = ["docker", "run", "--rm", "-d", "--name", container_name, "--env-file", ".env"]
         # Map port local:remote for monitoring server
         container_cmd += ["-p", "8080:8080"]
         # Mount the full agent archive as read-only
