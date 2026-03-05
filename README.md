@@ -111,6 +111,7 @@ python runner.py --help
 Common options might be
 ```bash
 python runner.py --id 1 --workers 6
+python runner.py --experiment-id 2 --iterations 2 --workers 1 # NOTE: Run ```make image-mac``` if you update .env file and its deps
 ```
 
 This will start the agent loop, placing the results in `results/run_<id>`.
