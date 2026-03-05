@@ -1,1 +1,0 @@
-The United States of America is the only country in the world that has all five climate zones: tropical, dry, temperate, continental, and polar.

@@ -4,12 +4,13 @@ PWD := $(shell pwd)
 
 int:  ## Interactive run; uses default shell entrypoint
 	@echo 'Once in the container, type:'
-	@echo 'python -m agent_code.agent -s -p "<your prompt here>"'
+	@echo 'python -m agent_code.agent -s -f /home/agent/test_prompt.md'
 	@echo 'Watch the agent work on localhost:8080'
 	docker run --rm -ti \
 		-p 8080:8080 \
 		--env-file .env \
 		-v ${PWD}/base_agent:/home/agent/agent_code:ro \
+		-v ${PWD}/test_prompt.md:/home/agent/test_prompt.md:ro \
 		-v ${PWD}/results/interactive_output:/home/agent/workdir:rw \
 		sica_sandbox
 

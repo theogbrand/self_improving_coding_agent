@@ -461,6 +461,13 @@ async def main():
         help="The core prompt or problem statement you want the agent to work on.",
     )
     parser.add_argument(
+        "--prompt-file",
+        "-f",
+        type=str,
+        default=None,
+        help="Path to a file containing the prompt (used instead of -p when set).",
+    )
+    parser.add_argument(
         "--server",
         "-s",
         action="store_true",
@@ -488,6 +495,8 @@ async def main():
 
     args = parser.parse_args()
 
+    problem = Path(args.prompt_file).read_text() if args.prompt_file else args.prompt
+
     try:
         workdir = Path(args.workdir)
         logdir = Path(args.logdir) if args.logdir else None
@@ -500,7 +509,7 @@ async def main():
             debug_mode=args.debug,
         )
         tokens, cached, cost, duration = await agent.exec(
-            problem=args.prompt,
+            problem=problem,
             timeout=args.timeout,
             cost_threshold=args.cost_threshold,
         )
