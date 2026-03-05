@@ -238,7 +238,7 @@ def get_tool_documentation(
 
 async def create_completion(
     messages: List[Message],
-    model: Model = Model.SONNET_37,
+    model: Model = Model.SONNET_46,
     temperature: float = 0.7,
     max_tokens: int | None = None,
     stop: str | list[str] | None = None,
@@ -431,7 +431,7 @@ async def create_completion(
 
 async def create_streaming_completion(
     messages: List[Message],
-    model: Model = Model.SONNET_37,
+    model: Model = Model.SONNET_46,
     temperature: float = 0.7,
     max_tokens: Optional[int] = None,
     stop: Optional[Union[str, List[str]]] = None,

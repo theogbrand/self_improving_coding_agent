@@ -263,7 +263,7 @@ async def json_str_to_dict(
     from ..llm.base import Message
     from ..types.llm_types import Model, TextContent
     if repair_model is None:
-        repair_model = Model.SONNET_37
+        repair_model = Model.SONNET_46
 
     target_schema = get_json_schema_representation(guide_obj)
     sys_prompt = "You are an AI assistant specializing in reformatting malformed JSON strings into valid JSON that adheres to a specific schema."

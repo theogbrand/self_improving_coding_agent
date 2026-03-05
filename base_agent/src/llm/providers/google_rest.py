@@ -38,7 +38,7 @@ from ...types.tool_types import ToolInterface
 from ...types.agent_types import AgentInterface
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 
 class GoogleRESTProvider(BaseProvider):
@@ -52,7 +52,7 @@ class GoogleRESTProvider(BaseProvider):
         # NOTE: the key isn't sent in the clear as a GET parameter thanks to HTTPS
         url = self.base_url.format(model_id=model, api_key=self._api_key)
         headers = {"Content-Type": "application/json"}
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=300.0) as client:
             response = await client.post(url, headers=headers, json=request_data)
             return json.loads(response.text)
 
@@ -258,6 +258,14 @@ class GoogleRESTProvider(BaseProvider):
         if response is None:
             raise RuntimeError(f"Gemini response as None")
 
+        # Check for API errors (e.g. 429 rate limit, 404 not found)
+        if "error" in response:
+            error = response["error"]
+            raise RuntimeError(f"Gemini API error {error.get('code')}: {error.get('message', 'Unknown error')}")
+
+        if "candidates" not in response:
+            raise RuntimeError(f"Gemini response missing 'candidates': {json.dumps(response)[:300]}")
+
         end_time = datetime.now()
 
         # Extract usage information
@@ -292,10 +300,18 @@ class GoogleRESTProvider(BaseProvider):
         # Map stop reason
         stop_reason, stop_sequence = self.map_stop_reason(response)
 
+        if stop_reason == StopReason.ERROR:
+            finish_reason = response.get("candidates", [{}])[-1].get("finishReason", "UNKNOWN")
+            raise RuntimeError(f"Gemini completion failed with finishReason: {finish_reason}")
+
         response_content = []
         for candidate in response["candidates"]:
+            content = candidate.get("content")
+            if not content or "parts" not in content:
+                logger.warning(f"Gemini candidate has no content/parts: {json.dumps(candidate)[:200]}")
+                continue
             response_content.append([])
-            for block in candidate["content"]["parts"]:
+            for block in content["parts"]:
                 if "text" in block:
                     response_content[-1].append(TextContent(text=block["text"]))
                 elif "functionCall" in block:
@@ -312,6 +328,9 @@ class GoogleRESTProvider(BaseProvider):
                     )
                 else:
                     logger.warning(f"Unhandled gemini response content block type: {block}")
+
+        if not response_content:
+            raise RuntimeError(f"Gemini response had no usable content in candidates")
 
         if len(response_content) == 1:
             response_content = response_content[0]

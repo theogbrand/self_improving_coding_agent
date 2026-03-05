@@ -239,7 +239,7 @@ class Model(Enum):
         preferred_arg_format=ArgFormat.XML,
     )
 
-    SONNET_37 = ModelInfo(
+    SONNET_46 = ModelInfo(
         api_name="claude-sonnet-4-6",
         provider=Provider.ANTHROPIC,
         costs=TokenCost(
@@ -257,7 +257,7 @@ class Model(Enum):
         preferred_arg_format=ArgFormat.XML,
     )
 
-    SONNET_37_VERTEX = ModelInfo(
+    SONNET_46_VERTEX = ModelInfo(
         api_name="claude-3-7-sonnet@20250219",
         provider=Provider.VERTEX,
         costs=TokenCost(
@@ -448,6 +448,40 @@ class Model(Enum):
         preferred_arg_format=ArgFormat.JSON,
     )
 
+    GEMINI_31_FLASH_LITE = ModelInfo(
+        api_name="gemini-3.1-flash-lite-preview",
+        provider=Provider.GOOGLE_REST,
+        costs=TokenCost(
+            input_uncached=0.25,
+            input_cached=0.25,
+            cache_write=0.25,
+            output=1.50,
+        ),
+        max_tokens=65536,
+        supports_caching=False,
+        reasoning_model=False,
+        context_window=1_048_576,
+        function_calling_interface=FCI.CONSTRAINED,
+        preferred_arg_format=ArgFormat.JSON,
+    )
+
+    GEMINI_31_PRO = ModelInfo(
+        api_name="gemini-3.1-pro-preview",
+        provider=Provider.GOOGLE_REST,
+        costs=TokenCost(
+            input_uncached=2.00,
+            input_cached=0.50,
+            cache_write=2.00,
+            output=12.00,
+        ),
+        max_tokens=65536,
+        supports_caching=False,
+        reasoning_model=True,
+        context_window=1_048_576,
+        function_calling_interface=FCI.CONSTRAINED,
+        preferred_arg_format=ArgFormat.JSON,
+    )
+
     @property
     def id(self) -> str:
         """Get the model identifier string used in API calls."""
@@ -516,8 +550,8 @@ class Model(Enum):
 
 MODEL_FAILOVER_MAP = {
     Model.SONNET_35: Model.FIREWORKS_DEEPSEEK_V3,
-    Model.SONNET_37: Model.SONNET_35,
-    Model.SONNET_37_VERTEX: Model.SONNET_37,
+    Model.SONNET_46: Model.SONNET_35,
+    Model.SONNET_46_VERTEX: Model.SONNET_46,
     Model.GPT4O: Model.SONNET_35,
     Model.O1: Model.FIREWORKS_DEEPSEEK_R1,
     Model.O3_MINI: Model.FIREWORKS_DEEPSEEK_R1,
@@ -527,4 +561,6 @@ MODEL_FAILOVER_MAP = {
     Model.FIREWORKS_DEEPSEEK_R1: Model.O1,
     Model.GEMINI_FLASH_2: Model.HAIKU_35,
     Model.GEMINI_25_PRO: Model.GEMINI_25_PRO,
+    Model.GEMINI_31_FLASH_LITE: Model.GEMINI_FLASH_2,
+    Model.GEMINI_31_PRO: Model.GEMINI_25_PRO,
 }

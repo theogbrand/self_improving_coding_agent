@@ -34,7 +34,7 @@ class SimpleTestAgent(BaseAgent):
     AGENT_NAME = "test_agent"
     AGENT_DESCRIPTION = "A test agent for testing agent calling"
     SYSTEM_PROMPT = "You are a test agent."
-    MODEL = Model.SONNET_37
+    MODEL = Model.SONNET_46
     INHERITANCE = InheritanceConfig()
 
     # Empty set of available agents by default
