@@ -19,7 +19,7 @@ swebench
 duckduckgo-search
 scipy
 sympy
-google-genai
+google-genai>=1.66.0
 googlesearch-python
 pytest
 pytest-asyncio

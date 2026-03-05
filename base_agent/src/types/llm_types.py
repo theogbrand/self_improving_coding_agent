@@ -63,6 +63,7 @@ class ToolCallContent(BaseModel):
     tool_args: Dict[str, Any]
     call_type: FCI | int
     parse_errors: str | None = None
+    thought_signature: str | bytes | None = None
     cache_control: Optional[Dict[str, str]] = None
 
     def __str__(self) -> str:
@@ -415,7 +416,7 @@ class Model(Enum):
 
     GEMINI_FLASH_2 = ModelInfo(
         api_name="gemini-2.0-flash",
-        provider=Provider.GOOGLE_REST,
+        provider=Provider.GOOGLE,
         costs=TokenCost(
             input_uncached=0.10,
             input_cached=0.025,
@@ -432,7 +433,7 @@ class Model(Enum):
 
     GEMINI_25_PRO = ModelInfo(
         api_name="gemini-2.5-pro-preview-03-25",
-        provider=Provider.GOOGLE_REST,
+        provider=Provider.GOOGLE,
         # TODO: update abstraction to account for 2.50 in > 200k, 15.00 out > 200k
         costs=TokenCost(
             input_uncached=1.25,
@@ -450,7 +451,7 @@ class Model(Enum):
 
     GEMINI_31_FLASH_LITE = ModelInfo(
         api_name="gemini-3.1-flash-lite-preview",
-        provider=Provider.GOOGLE_REST,
+        provider=Provider.GOOGLE,
         costs=TokenCost(
             input_uncached=0.25,
             input_cached=0.25,
@@ -458,8 +459,8 @@ class Model(Enum):
             output=1.50,
         ),
         max_tokens=65536,
-        supports_caching=False,
-        reasoning_model=False,
+        supports_caching=True,
+        reasoning_model=True,
         context_window=1_048_576,
         function_calling_interface=FCI.CONSTRAINED,
         preferred_arg_format=ArgFormat.JSON,
@@ -467,7 +468,7 @@ class Model(Enum):
 
     GEMINI_31_PRO = ModelInfo(
         api_name="gemini-3.1-pro-preview",
-        provider=Provider.GOOGLE_REST,
+        provider=Provider.GOOGLE,
         costs=TokenCost(
             input_uncached=2.00,
             input_cached=0.50,

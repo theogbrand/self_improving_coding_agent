@@ -335,7 +335,7 @@ Keep your analysis concise (no more than 1-2 paragraphs max) but thorough.
             ),
             Message(role="user", content=[TextContent(text=summary_prompt)]),
         ],
-        model=Model.GEMINI_FLASH_2,
+        model=Model.GEMINI_31_FLASH_LITE,
     )
 
     # Assume we'll get a single text completion

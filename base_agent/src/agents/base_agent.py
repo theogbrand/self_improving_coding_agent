@@ -561,6 +561,7 @@ This concludes the {cls.AGENT_NAME} agent documentation.
                         tool_name=event.metadata["name"],
                         tool_args=event.metadata["args"],
                         call_type=event.metadata["call_type"],
+                        thought_signature=event.metadata.get("thought_signature"),
                     ))
 
             elif event.type in {EventType.TOOL_RESULT, EventType.AGENT_RESULT}:

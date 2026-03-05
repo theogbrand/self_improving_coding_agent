@@ -176,6 +176,7 @@ async def publish_agent_call(
                 name=agent_content.tool_name,
                 args=agent_content.tool_args,
                 call_type=agent_content.call_type,
+                thought_signature=getattr(agent_content, "thought_signature", None),
             ),
         ),
         calling_agent._id,
