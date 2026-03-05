@@ -62,6 +62,17 @@ pip install swebench
 
 ### Testing the Agent
 
+```bash
+docker run --rm -ti \
+  -p 8080:8080 \
+  --env-file .env \
+  -v $(pwd)/base_agent:/home/agent/agent_code:ro \
+  -v $(pwd)/core_test_prompt.md:/home/agent/core_test_prompt.md:ro \
+  -v $(pwd)/results/interactive_output:/home/agent/workdir:rw \
+  sica_sandbox
+python -m agent_code.agent -s -f /home/agent/core_test_prompt.md
+```
+
 To test if the setup was successful, you can run the agent interactively with a manually set initial prompt using this target
 ```bash
 make int
