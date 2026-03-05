@@ -147,7 +147,9 @@ Important guidelines:
         return []
 
     async def _handle_agent_call(self, agent_content: ToolCallContent):
+        logger.info(f"[MAIN_ORCHESTRATOR] _handle_agent_call: delegating to child agent '{agent_content.tool_name}' (call_id={agent_content.call_id})")
         await super()._handle_agent_call(agent_content)
+        logger.info(f"[MAIN_ORCHESTRATOR] Child agent '{agent_content.tool_name}' returned, generating execution tree for context")
 
         # Generate the execution tree and add a notification. This is so that
         # the main agent can see what work the subagent did, and avoid

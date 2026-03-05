@@ -238,6 +238,7 @@ async def execute_agent_call(
     b) emittting the agent call and result events
     c) wrapping it in a cancellable task
     """
+    logger.info(f"[AGENT_CALL] execute_agent_call: caller={calling_agent.AGENT_NAME}:{calling_agent._id} → child={validated_agent.AGENT_NAME}:{validated_agent._id}")
     event_bus = await EventBus.get_instance()
     agent_call_start_time = datetime.now()
 
@@ -257,6 +258,7 @@ async def execute_agent_call(
 
         # Register the agent with the callgraph
         callgraph = await CallGraphManager.get_instance()
+        logger.info(f"[AGENT_CALL] Registering child {validated_agent.AGENT_NAME}:{validated_agent._id} in callgraph")
         await callgraph.start_agent(
             agent_name=validated_agent.AGENT_NAME,
             node_id=validated_agent._id,
@@ -264,10 +266,13 @@ async def execute_agent_call(
         )
 
         # Set off the agent task, and register it with the callgraph
+        logger.info(f"[AGENT_CALL] Creating asyncio task for {validated_agent.AGENT_NAME}:{validated_agent._id}")
         agent_task = asyncio.create_task(validated_agent.execute())
         await callgraph.register_agent_task(validated_agent._id, agent_task)
 
+        logger.info(f"[AGENT_CALL] Awaiting child task {validated_agent.AGENT_NAME}:{validated_agent._id}...")
         agent_result = await await_agent_task(agent_task, validated_agent)
+        logger.info(f"[AGENT_CALL] Child task {validated_agent.AGENT_NAME}:{validated_agent._id} completed — status={agent_result.status}, result_preview={str(agent_result.result)[:200]}")
 
         await event_bus.publish(
             Event(

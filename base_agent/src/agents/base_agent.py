@@ -622,12 +622,16 @@ This concludes the {cls.AGENT_NAME} agent documentation.
         """Handle agent call"""
         from .agent_calling import execute_agent_call, handle_parse_errors
 
+        logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] _handle_agent_call: child={agent_content.tool_name}, call_type={agent_content.call_type}")
+
         # Handle any parse errors
         if agent_content.parse_errors:
+            logger.warning(f"[AGENT:{self.AGENT_NAME}:{self._id}] Agent call parse errors: {agent_content.parse_errors}")
             await handle_parse_errors(agent_content, self)
             return
 
         if agent_content.tool_name not in [t.AGENT_NAME for t in self._available_agents]:
+            logger.warning(f"[AGENT:{self.AGENT_NAME}:{self._id}] Agent {agent_content.tool_name} not in available set: {[t.AGENT_NAME for t in self._available_agents]}")
             event_bus = await EventBus.get_instance()
             await event_bus.publish(
                 Event(
@@ -641,14 +645,19 @@ This concludes the {cls.AGENT_NAME} agent documentation.
         self._metrics.agent_calls += 1
         try:
             agent_cls = agent_registry.get(agent_content.tool_name)
+            logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] Instantiating child agent class={agent_cls.__name__}, args_keys={list(agent_content.tool_args.keys()) if agent_content.tool_args else 'none'}")
 
             validated_agent = TypeAdapter(agent_cls).validate_python(
                 agent_content.tool_args | {'parent': self, 'workdir': self._workdir, 'logdir': self._logdir, 'debug_mode': self._debug_mode}
             )
+            logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] Child agent validated: id={validated_agent._id}, model={validated_agent.MODEL}")
 
+            logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] >>> Delegating to child agent {validated_agent.AGENT_NAME}:{validated_agent._id} — blocking until child completes")
             await execute_agent_call(validated_agent, self, agent_content)
+            logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] <<< Child agent {validated_agent.AGENT_NAME}:{validated_agent._id} returned control to parent")
 
         except Exception as e:
+            logger.error(f"[AGENT:{self.AGENT_NAME}:{self._id}] Agent execution failed for {agent_content.tool_name}: {e}", exc_info=True)
             event_bus = await EventBus.get_instance()
             await event_bus.publish(
                 Event(
@@ -672,7 +681,9 @@ This concludes the {cls.AGENT_NAME} agent documentation.
 
         try:
             # First compose the system prompt (adds the SYSTEM_PROMPT_UPDATE event to event bus)
+            logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] execute() starting — model={self.MODEL}, max_iterations={self.MAX_ITERATIONS}, parent={self._parent_id}")
             system_prompt = await self.construct_system_prompt()
+            logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] System prompt constructed ({len(system_prompt)} chars)")
 
             consecutive_errors = 0
             for iteration in range(self.MAX_ITERATIONS):
@@ -738,6 +749,8 @@ This concludes the {cls.AGENT_NAME} agent documentation.
                 )
 
                 num_tools = 0
+                block_types = [type(b).__name__ for b in completion.content]
+                logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] Iteration {iteration}: got {len(completion.content)} blocks: {block_types}, stop_reason={completion.stop_reason}")
                 for block in completion.content:
                     if isinstance(block, TextContent):
                         if block.text.rstrip() != "":
@@ -776,16 +789,22 @@ This concludes the {cls.AGENT_NAME} agent documentation.
                         num_tools += 1
                         # Determine whether this is an agent call or a tool call
                         if block.tool_name in tool_registry:
+                            logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] Routing TOOL call: {block.tool_name} (call_id={block.call_id})")
                             await self._handle_tool_call(block)
                         elif block.tool_name in agent_registry:
+                            logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] Routing AGENT call: {block.tool_name} (call_id={block.call_id}), args_keys={list(block.tool_args.keys()) if block.tool_args else 'none'}")
                             await self._handle_agent_call(block)
+                        else:
+                            logger.warning(f"[AGENT:{self.AGENT_NAME}:{self._id}] Unknown tool/agent name: {block.tool_name} — not in tool_registry ({list(tool_registry.keys())}) or agent_registry ({list(agent_registry.keys())})")
 
                 if self._local_state.get("exec_complete", False):
                     consecutive_errors = 0
+                    logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] exec_complete=True → exiting with SUCCESS after iteration {iteration}")
                     # Handle normal completion
                     status = AgentStatus.SUCCESS
                     break
                 elif self._local_state.get("needs_exit", False):
+                    logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] needs_exit=True → exiting with INCOMPLETE after iteration {iteration}, reason={self._local_state.get('exit_reason')}")
                     # Handle early exit
                     status = AgentStatus.INCOMPLETE
                     break
@@ -825,6 +844,7 @@ This concludes the {cls.AGENT_NAME} agent documentation.
                     # break
 
                 if consecutive_errors > 5:
+                    logger.error(f"[AGENT:{self.AGENT_NAME}:{self._id}] Too many consecutive errors ({consecutive_errors}) — aborting with ERROR status")
                     status = AgentStatus.ERROR
                     break
 
@@ -834,6 +854,7 @@ This concludes the {cls.AGENT_NAME} agent documentation.
                 "return_value", "No result value returned."
             )
             early_exit_reason = self._local_state.get("exit_reason")
+            logger.info(f"[AGENT:{self.AGENT_NAME}:{self._id}] execute() finished — status={status}, result_preview={str(result)[:200]}, iterations_used={iteration + 1 if 'iteration' in dir() else 'N/A'}")
 
             return AgentResult(
                 agent_name=self.AGENT_NAME,
@@ -845,5 +866,5 @@ This concludes the {cls.AGENT_NAME} agent documentation.
 
         except Exception as e:
             self._metrics.end_time = datetime.now()
-            logger.info(f"Agent failed: {e}")
+            logger.error(f"[AGENT:{self.AGENT_NAME}:{self._id}] execute() EXCEPTION: {e}", exc_info=True)
             raise e

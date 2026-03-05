@@ -279,11 +279,14 @@ class Agent:
 
         try:
             # Create the main agent instance
+            logger.info(f"[ORCHESTRATOR] Creating MainOrchestratorAgent (workdir={self.workdir}, logdir={self.logdir}, debug={self.debug_mode})")
             main = MainOrchestratorAgent(
                 workdir=self.workdir, logdir=self.logdir, debug_mode=self.debug_mode
             )
+            logger.info(f"[ORCHESTRATOR] MainOrchestratorAgent created with id={main._id}, model={main.MODEL}, available_agents={[a.AGENT_NAME for a in main.AVAILABLE_AGENTS]}, available_tools={[t.TOOL_NAME for t in main._available_tools]}")
 
             # Publish the initial problem statement
+            logger.info(f"[ORCHESTRATOR] Publishing problem statement ({len(problem)} chars): {problem[:200]}...")
             await event_bus.publish(
                 Event(
                     type=EventType.PROBLEM_STATEMENT,
@@ -297,6 +300,7 @@ class Agent:
 
             # Register the agent with the callgraph
             callgraph = await CallGraphManager.get_instance()
+            logger.info(f"[ORCHESTRATOR] Registering MainOrchestratorAgent in callgraph (id={main._id})")
             await callgraph.start_agent(
                 agent_name=main.AGENT_NAME,
                 node_id=main._id,
@@ -304,8 +308,10 @@ class Agent:
             )
 
             # Create and store the main execution task
+            logger.info(f"[ORCHESTRATOR] Starting main.execute() as asyncio task")
             self._main_task = asyncio.create_task(main.execute())
             await callgraph.register_agent_task(main._id, self._main_task)
+            logger.info(f"[ORCHESTRATOR] Main task created and registered, now waiting for completion (timeout={timeout}, cost_threshold={cost_threshold})")
 
             # Create shutdown wait task
             shutdown_task = asyncio.create_task(self._shutdown_event.wait())
@@ -330,9 +336,16 @@ class Agent:
                 task_list.append(cost_monitor_task)
 
             # Wait for either completion or shutdown
+            logger.info(f"[ORCHESTRATOR] Entering asyncio.wait with {len(task_list)} tasks (main + shutdown + monitors)")
             done, pending = await asyncio.wait(
                 task_list, return_when=asyncio.FIRST_COMPLETED
             )
+            logger.info(f"[ORCHESTRATOR] asyncio.wait returned: {len(done)} done, {len(pending)} pending")
+            for t in done:
+                if t == self._main_task:
+                    logger.info(f"[ORCHESTRATOR] Main task completed (exception={t.exception() if not t.cancelled() else 'cancelled'})" if t.done() and (t.cancelled() or t.exception()) else "[ORCHESTRATOR] Main task completed successfully")
+                elif t == shutdown_task:
+                    logger.info(f"[ORCHESTRATOR] Shutdown event was triggered")
 
             # Cancel pending tasks
             for task in pending:

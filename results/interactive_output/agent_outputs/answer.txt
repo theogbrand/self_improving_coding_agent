@@ -1,1 +1,1 @@
-done
+The bug in `sklearn.ensemble.IsolationForest` where fitting with a `pd.DataFrame` and `contamination != 'auto'` caused a spurious "X does not have valid feature names" warning has been resolved. The fix involved decoupling the internal score calculation from the public `score_samples` method by introducing an internal `_compute_raw_score_samples` method, which is now used by `fit()` to avoid triggering the unnecessary validation. A regression test was added to verify the fix.
