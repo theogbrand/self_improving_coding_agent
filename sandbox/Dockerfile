@@ -45,7 +45,9 @@ RUN mkdir -p /opt/miniconda3 && \
 
 # Configure conda
 RUN /opt/miniconda3/bin/conda init --all && \
-    /opt/miniconda3/bin/conda config --append channels conda-forge
+    /opt/miniconda3/bin/conda config --append channels conda-forge && \
+    /opt/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    /opt/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
 # Create system-wide conda initialization
 RUN echo '. /opt/miniconda3/etc/profile.d/conda.sh' >> /etc/bashrc && \
